@@ -1,21 +1,21 @@
-import hashlib  # for hashing chunks (trust issues remain valid)
-import os  # for file operations
-import time  # for measuring time (finally some awareness)
+import hashlib  
+import os  
+import time  
 
-import requests  # for HTTP calls
+import requests  
 
-CHUNK_SIZE_IN_BYTES = 500 * 1024 * 1024  # 5MB chunks (chatty but precise)
+CHUNK_SIZE_IN_BYTES = 500 * 1024 * 1024  
 
 
 def generate_chunk_hash(chunk_data):
-    sha256_hash_object = hashlib.sha256()  # create hash object
-    sha256_hash_object.update(chunk_data)  # feed data
-    return sha256_hash_object.hexdigest()  # return fingerprint
+    sha256_hash_object = hashlib.sha256()  
+    sha256_hash_object.update(chunk_data)  
+    return sha256_hash_object.hexdigest()  
 
 
 def upload_single_chunk(file_identifier, chunk_index, chunk_data):
 
-    upload_api_endpoint = "http://localhost:5000/upload_chunk"  # server endpoint
+    upload_api_endpoint = "http://localhost:5000/upload_chunk"  
 
     payload_data = {
         "file_id": file_identifier,
@@ -51,40 +51,38 @@ def upload_file_with_resume(file_path):
 
     missing_chunk_indexes = get_missing_chunks(file_identifier)
 
-    uploaded_bytes = 0  # track total uploaded
-    start_time = time.time()  # start stopwatch
+    uploaded_bytes = 0  
+    start_time = time.time()  
 
     with open(file_path, "rb") as file_object:
 
         for current_chunk_index in range(total_chunks):
 
-            # read chunk regardless (keeps file pointer aligned, unlike previous bug)
+            
             chunk_data = file_object.read(CHUNK_SIZE_IN_BYTES)
 
             if current_chunk_index not in missing_chunk_indexes:
-                uploaded_bytes += len(
-                    chunk_data
-                )  # count skipped chunks as already uploaded
+                uploaded_bytes += len(chunk_data)  
                 continue
 
             response = upload_single_chunk(
                 file_identifier, current_chunk_index, chunk_data
             )
 
-            uploaded_bytes += len(chunk_data)  # update progress
+            uploaded_bytes += len(chunk_data)  
 
-            # time calculations
+            
             elapsed_time = time.time() - start_time
 
-            upload_speed = (
-                uploaded_bytes / elapsed_time if elapsed_time > 0 else 0
-            )  # bytes/sec
+            upload_speed = uploaded_bytes / elapsed_time if elapsed_time > 0 else 0  
 
             remaining_bytes = total_file_size - uploaded_bytes
 
-            eta_seconds = remaining_bytes / upload_speed if upload_speed > 0 else 0
+            eta_seconds = (
+                remaining_bytes / upload_speed if upload_speed > 0 else 0
+            )
 
-            # human readable
+            
             speed_mb_per_sec = upload_speed / (1024 * 1024)
             eta_minutes = eta_seconds / 60
             progress_percent = (uploaded_bytes / total_file_size) * 100
@@ -100,4 +98,6 @@ def upload_file_with_resume(file_path):
 
 if __name__ == "__main__":
 
-    upload_file_with_resume(r"I:\Adobe Photoshop Masterclass From Beginner to Pro.zip")
+    upload_file_with_resume(
+        r"I:\Adobe Photoshop Masterclass From Beginner to Pro.zip"
+    )
